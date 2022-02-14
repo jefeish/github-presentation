@@ -5,6 +5,11 @@
   "version": "1.0.0",
   "main": "./app.js",
   "type": "module",
+  "scripts": {
+    "server": "ngrok http 4567",
+    "app": "node app.js",
+    "get-secret": "node secret.js"
+  },
   "dependencies": {
     "octokit": "1.7.1"
   }
