@@ -1,6 +1,14 @@
 # Github Presentation
 This project is centered around a mock-customer scenario in which security for branches needs to be applied.
 
+## Questions
+1. What is the client name?
+2. Who are the attendees (their names)?
+3. What is the "langugage of choice" for client's developers?
+
+## Notes
+1. Official "octokit" wrapper has support for Ruby, .NET, and JavaScript. Other wrappers exist, but are third-party.
+2. Free organizations can only protect public repositories.
 
 ## Demo
 To see the code in action, follow the steps below.
@@ -33,7 +41,13 @@ __Note__: all terminal commands should be ran from the cloned repository directo
 ### Outcome
 The new repository will have two branches (`main` and `dev`) created automatically, as well as branch protection rules.
 
+### Troubleshooting
+- If the code fails after trying to protect the main branch, make sure you set the repository as public and NOT private.
+
+### To Do
+- add listing of branches to validate that the main branch doesn't exist already.
+- Add an issue to the repository with an @ mention for myself
 ---
 
 ## Additional Files
-- `presentation.pptx`: contains the presentation slide deck.
+- `github-presentation.pptx`: contains the presentation slide deck.
