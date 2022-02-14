@@ -58,7 +58,7 @@ const server = http.createServer(async function (req, res) {
     if (data.action && data.repository) {
 
       // set some static vars
-      const org = data.organization.login;
+      const owner = data.repository.owner.login;
       const repo = data.repository.name;
 
       // do tasks based off of
@@ -73,22 +73,68 @@ const server = http.createServer(async function (req, res) {
             const {data: createMainBranch} = await octokit.request(
               "PUT /repos/{owner}/{repo}/contents/README.md",
               {
-                owner: org,
+                owner: owner,
                 repo: repo,
                 branch: "main",
                 message: "Initial commit.",
                 content: Buffer.from(`# ${repo}`).toString('base64')
               }
             );
+            
+            // secure the main branch
+            await octokit.request(
+              "PUT /repos/{owner}/{repo}/branches/{branch}/protection",
+              {
+                owner: owner,
+                repo: repo,
+                branch: "main",
+                enforce_admins: true,
+                required_status_checks: null,
+                required_pull_request_reviews: {
+                  dismissal_restrictions: {},
+                  dismiss_stale_reviews: true,
+                  require_code_owner_reviews: true,
+                  required_approving_review_count: 2
+                },
+                restrictions: null,
+                required_linear_history: false,
+                allow_force_pushes: false,
+                allow_deletions: false,
+                required_conversation_resolution: true
+              }
+            );
 
             // create the dev branch
-            const {data: createDevBranch } = await octokit.request(
+            await octokit.request(
               `POST /repos/{owner}/{repo}/git/refs`,
               {
-                owner: org,
+                owner: owner,
                 repo: repo,
                 ref: "refs/heads/dev",
                 sha: createMainBranch.commit.sha
+              }
+            );
+
+            // secure the dev branch
+            await octokit.request(
+              "PUT /repos/{owner}/{repo}/branches/{branch}/protection",
+              {
+                owner: owner,
+                repo: repo,
+                branch: "dev",
+                enforce_admins: false,
+                required_status_checks: null,
+                required_pull_request_reviews: {
+                  dismissal_restrictions: {},
+                  dismiss_stale_reviews: true,
+                  require_code_owner_reviews: false,
+                  required_approving_review_count: 1
+                },
+                restrictions: null,
+                required_linear_history: false,
+                allow_force_pushes: false,
+                allow_deletions: false,
+                required_conversation_resolution: false
               }
             );
 
