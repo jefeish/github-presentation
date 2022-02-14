@@ -1,0 +1,11 @@
+{
+  "name": "github-repository-hook",
+  "description": "A quick package to modify repository security for an organization.",
+  "authors": "Samuel Mello",
+  "version": "1.0.0",
+  "main": "./app.js",
+  "type": "module",
+  "dependencies": {
+    "octokit": "1.7.1"
+  }
+}
