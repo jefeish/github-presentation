@@ -21,8 +21,6 @@ function respond(resObject, code, message) {
 // set up local server
 const server = http.createServer(async function (req, res) {
 
-  //console.log(req.headers);
-
   // get body sent
   let body = '';
   req.on('data', chunk => {
@@ -52,7 +50,11 @@ const server = http.createServer(async function (req, res) {
     }
 
     // attempt login
-    const {data: { login },} = await octokit.rest.users.getAuthenticated();
+    try {
+      await octokit.rest.users.getAuthenticated();
+    } catch (err) {
+      respond(res, 500, err);
+    }
 
     // determine if this is a repository related payload
     if (data.action && data.repository) {
@@ -67,19 +69,42 @@ const server = http.createServer(async function (req, res) {
         // when a repository is created
         case "created":
 
+          // check if the "main" branch exists already (do not overwrite using contents)
+          let branchExists = false;
+          let existingMainBranch = {};
           try {
-
-            // create the main branch by adding an initial commit via contents
-            const {data: createMainBranch} = await octokit.request(
-              "PUT /repos/{owner}/{repo}/contents/README.md",
+            existingMainBranch = await octokit.request(
+              'GET /repos/{owner}/{repo}/branches/{branch}',
               {
-                owner: owner,
-                repo: repo,
+                owner: "phony-bologna",
+                repo: "test",
                 branch: "main",
-                message: "Initial commit.",
-                content: Buffer.from(`# ${repo}`).toString('base64')
               }
             );
+            branchExists = true
+          } catch (err) {}
+
+          // wrap all the next commands in one big try/catch
+          try {
+
+            // ONLY if branch does not exist
+            let createMainBranch = {};
+            if (!branchExists) {
+              // create the main branch by adding an initial commit via contents
+              createMainBranch = await octokit.request(
+                "PUT /repos/{owner}/{repo}/contents/README.md",
+                {
+                  owner: owner,
+                  repo: repo,
+                  branch: "main",
+                  message: "Initial commit.",
+                  content: Buffer.from(`# ${repo}`).toString('base64')
+                }
+              );
+              createMainBranch = createMainBranch.data;
+            } else {
+              createMainBranch = existingMainBranch.data;
+            }
             
             // secure the main branch
             await octokit.request(
@@ -135,6 +160,17 @@ const server = http.createServer(async function (req, res) {
                 allow_force_pushes: false,
                 allow_deletions: false,
                 required_conversation_resolution: false
+              }
+            );
+
+            // add issue
+            await octokit.request(
+              'POST /repos/{owner}/{repo}/issues',
+              {
+                owner: owner,
+                repo: repo,
+                title: "New Repository Created",
+                body: `User ${data.sender.login} has created this repository. Notifying admin @${process.env.ADMIN_USERNAME}.`
               }
             );
 
